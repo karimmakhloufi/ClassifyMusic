@@ -23,8 +23,9 @@ Then open the URL Vite prints (usually http://localhost:5173).
   The game starts as soon as the page loads.
 - **CORS**: Deezer's API doesn't send CORS headers, so the browser can't call it directly.
   `vite.config.js` proxies `/deezer/*` to `api.deezer.com` (for both `npm run dev` and
-  `npm run preview`). A static deployment (`npm run build`) needs the same proxy on your host,
-  e.g. a Netlify/Vercel rewrite or a small serverless function.
+  `npm run preview`). In production, `netlify.toml` sets up the same proxy on Netlify.
+  On another host, add an equivalent rewrite (e.g. Vercel `rewrites`).
+  MusicBrainz does send CORS headers, so it is called directly from the browser.
 - **Release dates**: Deezer's `release_date` is usually the date of the compilation or remaster
   it streams ("Billie Jean" comes back as 2009, "Don't Stop Believin'" as 2001). That would
   make the game wrong, so `src/lib/releaseYear.js` takes the **earliest** of:

@@ -1,0 +1,12 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# Deezer's API sends no CORS headers, so the browser can't call it directly.
+# Same as the Vite dev proxy: /deezer/* is forwarded to api.deezer.com
+# (status 200 = proxy, the URL in the browser doesn't change; query strings are kept).
+[[redirects]]
+  from = "/deezer/*"
+  to = "https://api.deezer.com/:splat"
+  status = 200
+  force = true

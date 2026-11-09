@@ -1,4 +1,5 @@
-// MusicBrainz recording search (proxied through Vite at /musicbrainz).
+// MusicBrainz recording search. Called directly from the browser (MusicBrainz sends
+// CORS headers), so each player uses their own per-IP rate limit.
 // Used to find a song's ORIGINAL release year: Deezer usually returns the date of
 // whatever compilation/remaster it streams (e.g. "Billie Jean" -> 2009).
 //
@@ -6,7 +7,7 @@
 
 import { normalize, normTitle, baseTitle } from '../lib/text.js';
 
-const BASE = '/musicbrainz/ws/2';
+const BASE = 'https://musicbrainz.org/ws/2';
 const MIN_GAP_MS = 1250;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
