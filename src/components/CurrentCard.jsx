@@ -1,11 +1,14 @@
-export default function CurrentCard({ song, reveal, loading, audio }) {
+export default function CurrentCard({ song, reveal, loading, audio, blind = false }) {
   if (reveal) {
-    const { song: s, ok } = reveal;
+    const { song: s, ok, by } = reveal;
     return (
       <div className={`current-card ${ok ? 'is-correct' : 'is-wrong'}`} role="status">
         <img className="cover" src={s.cover} alt="" />
         <div className="info">
-          <div className="verdict">{ok ? 'Correct!' : 'Not quite'}</div>
+          <div className="verdict">
+            {by ? `${by}: ` : ''}
+            {ok ? 'Correct!' : 'Not quite'}
+          </div>
           <div className="title">{s.title}</div>
           <div className="artist">{s.artist}</div>
           <div className="year-big">{s.year}</div>
@@ -29,11 +32,17 @@ export default function CurrentCard({ song, reveal, loading, audio }) {
   const progress = audio.src === song.preview ? audio.progress : 0;
 
   return (
-    <div className="current-card">
-      <img className="cover" src={song.cover} alt="" />
+    <div className={`current-card ${blind ? 'blind' : ''}`}>
+      {blind ? (
+        <div className="cover mystery" aria-hidden="true">
+          ?
+        </div>
+      ) : (
+        <img className="cover" src={song.cover} alt="" />
+      )}
       <div className="info">
-        <div className="title">{song.title}</div>
-        <div className="artist">{song.artist}</div>
+        <div className="title">{blind ? 'Mystery song' : song.title}</div>
+        <div className="artist">{blind ? 'Listen closely…' : song.artist}</div>
         <div className="player">
           <button
             className="play"

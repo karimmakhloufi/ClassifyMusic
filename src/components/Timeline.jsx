@@ -47,6 +47,7 @@ export default function Timeline({ songs, onPlace, highlightId, audio }) {
               <span className="tl-meta">
                 <span className="title">{s.title}</span>
                 <span className="artist">{s.artist}</span>
+                {s.placedBy && <span className="tl-by">placed by {s.placedBy}</span>}
               </span>
               {s.placed === 'wrong' && (
                 <span className="tl-mark" aria-label="Misplaced">

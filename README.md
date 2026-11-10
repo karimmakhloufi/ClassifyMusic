@@ -1,7 +1,17 @@
 # Timeline Tunes
 
-A music game: listen to a 30-second preview and place the song at the right spot in your
-chronological timeline. Three wrong placements and the game is over.
+A music game: listen to a 30-second preview and place the song at the right spot in a
+chronological timeline.
+
+- **Solo**: each song starts as a blind test: guess the artist, tap **Reveal**, and say
+  whether you got it (+1 point). Then place the song (+1 point if correct). Three wrong
+  placements and the game is over.
+- **Party** (2–8 players or teams, one device): everyone shares the same timeline and takes
+  turns. Each song starts as a blind test (cover, title and artist hidden): everyone guesses
+  the artist, someone taps **Reveal**, and whoever guessed right gets +1 point (or no one).
+  Then the player whose turn it is places the song: a correct placement scores a point. No
+  lives in party mode. First to the target score (5/10/15) wins; if the songs run out, most
+  points wins.
 
 Built with React + Vite. Song data (title, artist, cover, preview) comes from the
 [Deezer API](https://developers.deezer.com/api).
@@ -47,7 +57,8 @@ src/
   lib/releaseYear.js    Combines Deezer + MusicBrainz dates, decade sanity check, cache
   lib/songPool.js       Shuffled queue of songs, background prefetching
   lib/timeline.js       Pure placement rules
+  lib/players.js        Turns, lives and win conditions (solo + party)
   lib/sources.js        Decade → Deezer playlist IDs
   hooks/useAudio.js     Single shared <audio> element for previews
-  components/           Game, CurrentCard, Timeline, GameOver
+  components/           Menu, PartySetup, Game, Scoreboard, CurrentCard, Timeline, GameOver
 ```

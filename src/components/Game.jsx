@@ -1,21 +1,34 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAudio } from '../hooks/useAudio.js';
 import { correctSlot, insertAt, isCorrectSlot } from '../lib/timeline.js';
+import { applyPlacement, awardArtist, checkEnd, createPlayers, leader, nextTurn } from '../lib/players.js';
+import ArtistQuiz from './ArtistQuiz.jsx';
 import CurrentCard from './CurrentCard.jsx';
+import Scoreboard from './Scoreboard.jsx';
 import TapOverlay from './TapOverlay.jsx';
 import Timeline from './Timeline.jsx';
 
-const LIVES = 3;
 const REVEAL_MS = 1600;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-export default function Game({ pool, onEnd, locked, onUnlock }) {
+/**
+ * One game. `players` is a list of names: one name = solo, several = party mode.
+ *
+ * Turn phases:
+ *   solo:  blind (guess the artist) -> award (did you get it?) -> place
+ *   party: handoff ("Pass to X") -> blind (guess the artist) -> award (who got it?) -> place
+ */
+export default function Game({ pool, players: names, target, onEnd }) {
+  const party = names.length > 1;
+  const firstPhase = party ? 'handoff' : 'blind';
   const audio = useAudio();
+  const [players, setPlayers] = useState(() => createPlayers(names));
+  const [turn, setTurn] = useState(0);
   const [timeline, setTimeline] = useState([]);
   const [current, setCurrent] = useState(null);
-  const [reveal, setReveal] = useState(null); // { song, ok } after placing
-  const [lives, setLives] = useState(LIVES);
-  const [score, setScore] = useState(0);
+  const [phase, setPhase] = useState(firstPhase);
+  const [awarded, setAwarded] = useState(undefined); // undefined = not decided, null = no one, else index
+  const [reveal, setReveal] = useState(null); // { song, ok, by } after placing
   const [loading, setLoading] = useState(true);
 
   const started = useRef(false);
@@ -28,6 +41,9 @@ export default function Game({ pool, onEnd, locked, onUnlock }) {
     };
   }, []);
 
+  const finish = (end, finalPlayers, finalTimeline) =>
+    onEnd({ mode: party ? 'party' : 'solo', players: finalPlayers, timeline: finalTimeline, ...end });
+
   // Deal the first (already revealed) song plus the first song to place.
   useEffect(() => {
     if (started.current) return; // StrictMode runs effects twice in dev
@@ -36,100 +52,139 @@ export default function Game({ pool, onEnd, locked, onUnlock }) {
       const anchor = await pool.next();
       const first = await pool.next();
       if (!alive.current) return;
+      const anchorTimeline = anchor ? [{ ...anchor, placed: 'anchor' }] : [];
       if (!anchor || !first) {
-        onEnd({ score: 0, timeline: anchor ? [{ ...anchor, placed: 'anchor' }] : [], reason: 'exhausted' });
+        finish({ reason: 'exhausted', winner: party ? 0 : null }, players, anchorTimeline);
         return;
       }
-      setTimeline([{ ...anchor, placed: 'anchor' }]);
+      setTimeline(anchorTimeline);
       setCurrent(first);
       setLoading(false);
     })();
-  }, [pool, onEnd]);
-
-  // Auto-play each new song (once the player has tapped to start).
-  useEffect(() => {
-    if (current && !locked) audio.play(current.preview);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [current?.id, locked]);
+  }, []);
 
-  function unlock() {
-    // Start playback inside the tap handler itself: iOS Safari requires it.
+  // Auto-play each new song once it's visible (in party mode: after the handoff tap).
+  const waitingForTap = phase === 'handoff';
+  useEffect(() => {
+    if (current && !waitingForTap) audio.play(current.preview);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current?.id, waitingForTap]);
+
+  function startTurn() {
+    // Play inside the tap handler itself: iOS Safari requires it.
     if (current) audio.play(current.preview);
-    onUnlock();
+    setPhase('blind');
+  }
+
+  function award(index) {
+    setPlayers((ps) => awardArtist(ps, index));
+    setAwarded(index);
+    setPhase('place');
   }
 
   async function place(slot) {
-    if (!current || reveal) return;
+    if (!current || reveal || phase !== 'place') return;
     const song = current;
+    const player = players[turn];
     const ok = isCorrectSlot(timeline, slot, song.year);
-    const next = insertAt(timeline, ok ? slot : correctSlot(timeline, song.year), {
+    const nextTimeline = insertAt(timeline, ok ? slot : correctSlot(timeline, song.year), {
       ...song,
       placed: ok ? 'correct' : 'wrong',
+      placedBy: party ? player.name : null,
     });
-    const newLives = ok ? lives : lives - 1;
-    const newScore = ok ? score + 1 : score;
+    const nextPlayers = applyPlacement(players, turn, ok);
 
     audio.stop();
-    setTimeline(next);
-    setLives(newLives);
-    setScore(newScore);
-    setReveal({ song, ok });
+    setTimeline(nextTimeline);
+    setPlayers(nextPlayers);
+    setReveal({ song, ok, by: party ? player.name : null });
     setCurrent(null);
 
     await sleep(REVEAL_MS);
     if (!alive.current) return;
-    if (newLives === 0) {
-      onEnd({ score: newScore, timeline: next, reason: 'lives' });
+    const end = checkEnd(nextPlayers, target);
+    if (end) {
+      finish(end, nextPlayers, nextTimeline);
       return;
     }
 
+    setTurn(nextTurn(nextPlayers, turn));
     setLoading(true);
     const upcoming = await pool.next();
     if (!alive.current) return;
     setLoading(false);
     setReveal(null);
+    setAwarded(undefined);
     if (!upcoming) {
-      onEnd({ score: newScore, timeline: next, reason: 'exhausted' });
+      finish({ reason: 'exhausted', winner: party ? leader(nextPlayers) : null }, nextPlayers, nextTimeline);
       return;
     }
+    // Batched together, so the auto-play effect sees the handoff and waits for the tap.
+    setPhase(firstPhase);
     setCurrent(upcoming);
+  }
+
+  const who = players[turn];
+  const canPlace = current && !reveal && phase === 'place';
+
+  let hint = ' ';
+  if (current && phase === 'place') {
+    hint = (
+      <>
+        {party && <strong>{who.name}: </strong>}
+        Tap a <strong>+</strong> to place the song. Oldest at the top.
+      </>
+    );
+  } else if (current && (phase === 'blind' || phase === 'award')) {
+    hint = (
+      <>
+        {party ? (
+          <>
+            Then <strong>{who.name}</strong> places the song on the timeline.
+          </>
+        ) : (
+          'Then place the song on the timeline.'
+        )}
+      </>
+    );
   }
 
   return (
     <main className="screen game">
-      {locked && <TapOverlay ready={!!current} onTap={unlock} />}
-      <header className="hud">
-        <span className="score">Score {score}</span>
-        <span className="lives" aria-label={`${lives} lives left`}>
-          {Array.from({ length: LIVES }, (_, i) => (
-            <span key={i} className={i < lives ? 'life' : 'life lost'}>
-              ♥
-            </span>
-          ))}
-        </span>
-      </header>
+      {phase === 'handoff' && !reveal && (
+        <TapOverlay
+          title={`${who.name}'s turn`}
+          sub={current ? 'Pass the device, then tap to play the song' : 'Loading the next song…'}
+          onTap={startTurn}
+        />
+      )}
+
+      <Scoreboard players={players} turn={turn} target={target} />
 
       <div className="sticky">
-        <CurrentCard song={current} reveal={reveal} loading={loading} audio={audio} />
+        <CurrentCard
+          song={current}
+          reveal={reveal}
+          loading={loading}
+          audio={audio}
+          blind={phase === 'blind'}
+        />
+        {current && !reveal && (
+          <ArtistQuiz
+            phase={phase}
+            players={players}
+            awarded={awarded}
+            onReveal={() => setPhase('award')}
+            onAward={award}
+          />
+        )}
       </div>
 
       {timeline.length > 0 && (
         <>
-          <p className="hint center">
-            {current ? (
-              <>
-                Tap a <strong>+</strong> to place the song. Oldest at the top.
-              </>
-            ) : (
-              ' '
-            )}
-          </p>
-          <Timeline
-            songs={timeline}
-            onPlace={current && !reveal ? place : null}
-            highlightId={reveal?.song.id}
-            audio={audio}
-          />
+          <p className="hint center">{hint}</p>
+          <Timeline songs={timeline} onPlace={canPlace ? place : null} highlightId={reveal?.song.id} audio={audio} />
         </>
       )}
     </main>

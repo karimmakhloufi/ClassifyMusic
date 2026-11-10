@@ -223,7 +223,129 @@ h2 { font-size: 1.05rem; margin: 1.8em 0 0.7em; color: var(--muted); font-weight
 .slot .plus { font-size: 1.3rem; font-weight: 700; line-height: 1; }
 .slot .slot-label { font-size: 0.85rem; }
 
-/* Tap to start */
+/* Menu */
+.mode-buttons { display: flex; flex-direction: column; gap: 12px; margin-top: 28px; }
+.mode {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 18px 20px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  text-align: left;
+  transition: border-color 0.15s, transform 0.15s;
+}
+.mode:hover:not(:disabled) { border-color: var(--accent); transform: translateY(-1px); }
+.mode.primary-mode { border: 0; background: linear-gradient(90deg, var(--accent), var(--accent-2)); color: white; }
+.mode-icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  flex: none;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.15);
+  font-size: 1.4rem;
+}
+.mode-text { display: flex; flex-direction: column; min-width: 0; }
+.mode-title { font-size: 1.3rem; font-weight: 800; }
+.mode-sub { opacity: 0.8; font-size: 0.95rem; }
+
+/* Party setup */
+.back { margin-bottom: 4px; }
+.player-list { list-style: none; padding: 0; margin: 0 0 12px; display: flex; flex-direction: column; gap: 8px; }
+.player-list li { display: flex; gap: 8px; align-items: center; }
+.player-list input {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+.ghost.icon { width: 40px; height: 40px; padding: 0; flex: none; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+}
+.chip.on { background: var(--accent); border-color: var(--accent); color: white; font-weight: 600; }
+
+/* Party scoreboard */
+.hud.party { flex-direction: column; align-items: stretch; gap: 6px; }
+.hud.party > .hint { text-align: center; font-size: 0.8rem; }
+.scoreboard { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.player-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 0.9rem;
+  transition: border-color 0.2s, background 0.2s;
+}
+.player-chip.active { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 22%, var(--surface)); }
+.pc-name { font-weight: 600; max-width: 9em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pc-score { font-weight: 800; }
+
+.tl-by { color: var(--accent); font-size: 0.78rem; }
+
+/* Blind test (party) */
+.cover.mystery {
+  display: grid;
+  place-items: center;
+  font-size: 3rem;
+  font-weight: 800;
+  color: white;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  animation: pulse 1.8s ease-in-out infinite;
+}
+.current-card.blind .title { color: var(--muted); }
+.quiz {
+  margin-top: 8px;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+.quiz-prompt { margin: 0 0 10px; font-weight: 700; text-align: center; }
+.quiz .primary.quiz-reveal { margin-top: 0; padding: 10px 20px; font-size: 1rem; }
+.quiz-choices { justify-content: center; }
+.chip.award { color: var(--text); border-color: var(--good); }
+.chip.award:hover { background: color-mix(in srgb, var(--good) 20%, var(--surface)); }
+.chip.none:hover { border-color: var(--muted); color: var(--text); }
+.quiz-result { margin: 8px 0 0; text-align: center; font-weight: 600; color: var(--good); }
+.quiz-result.miss { color: var(--muted); }
+
+/* Final standings */
+.standings { list-style: none; padding: 0; margin: 16px 0; display: flex; flex-direction: column; gap: 6px; }
+.standings li {
+  display: grid;
+  grid-template-columns: 2rem 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+.standings li.winner { border-color: var(--good); background: color-mix(in srgb, var(--good) 12%, var(--surface)); }
+.st-rank { font-weight: 800; color: var(--muted); }
+.st-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.st-score { font-weight: 800; }
+.st-artist { font-weight: 400; color: var(--muted); font-size: 0.85rem; }
+
+/* Tap overlay (party handoff) */
 .tap-overlay {
   position: fixed;
   inset: 0;

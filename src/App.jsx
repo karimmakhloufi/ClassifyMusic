@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
+import Menu from './components/Menu.jsx';
+import PartySetup from './components/PartySetup.jsx';
 import Game from './components/Game.jsx';
 import GameOver from './components/GameOver.jsx';
-import TapOverlay from './components/TapOverlay.jsx';
 import { SongPool } from './lib/songPool.js';
 import { DECADES } from './lib/sources.js';
 import { loadBest, saveBest } from './lib/storage.js';
@@ -9,76 +10,103 @@ import { loadBest, saveBest } from './lib/storage.js';
 const SOURCES = DECADES.map(({ playlistId, decade }) => ({ playlistId, decade }));
 
 export default function App() {
-  const [screen, setScreen] = useState('loading'); // loading | error | game | over
-  const [pool, setPool] = useState(null);
-  const [gameId, setGameId] = useState(0);
+  const [screen, setScreen] = useState('menu'); // menu | party | game | over
+  const [game, setGame] = useState(null); // { id, pool, players: string[], target }
   const [result, setResult] = useState(null);
   const [best, setBest] = useState(loadBest);
+  const [partyNames, setPartyNames] = useState(['Player 1', 'Player 2']);
+  const [target, setTarget] = useState(10);
+  const [starting, setStarting] = useState(false);
   const [error, setError] = useState('');
-  const [unlocked, setUnlocked] = useState(false); // has the player tapped to start?
-  const unlock = () => setUnlocked(true);
-  const started = useRef(false);
 
-  async function start() {
-    const p = new SongPool(SOURCES);
-    await p.init(); // throws with a readable message; callers show it
-    setPool(p);
-    setGameId((n) => n + 1);
+  // The next game's song pool, loaded in the background so starting is instant.
+  const nextPool = useRef(null);
+  function preparePool() {
+    const pool = new SongPool(SOURCES);
+    const ready = pool.init();
+    ready.catch(() => {}); // reported when a game tries to start
+    nextPool.current = { pool, ready };
+  }
+  useEffect(() => {
+    if (!nextPool.current) preparePool();
+  }, []);
+
+  async function start(players) {
+    if (!nextPool.current) preparePool();
+    const { pool, ready } = nextPool.current;
+    setStarting(true);
+    setError('');
+    try {
+      await ready;
+    } catch (err) {
+      nextPool.current = null; // retry with a fresh pool next time
+      setError(err.message || 'Something went wrong loading the songs.');
+      setStarting(false);
+      return;
+    }
+    nextPool.current = null;
+    setGame((g) => ({ id: (g?.id ?? 0) + 1, pool, players, target }));
+    setStarting(false);
     setScreen('game');
   }
 
-  async function startFromScratch() {
-    setScreen('loading');
-    try {
-      await start();
-    } catch (err) {
-      setError(err.message || 'Something went wrong loading the songs.');
-      setScreen('error');
-    }
-  }
-
-  // Start the first game straight away.
-  useEffect(() => {
-    if (started.current) return; // StrictMode runs effects twice in dev
-    started.current = true;
-    startFromScratch();
-  }, []);
-
   function endGame(res) {
-    pool?.stop();
-    const newBest = res.score > best;
-    if (newBest) {
-      setBest(res.score);
-      saveBest(res.score);
+    game.pool.stop();
+    let newBest = false;
+    if (res.mode === 'solo' && res.players[0].score > best) {
+      newBest = true;
+      setBest(res.players[0].score);
+      saveBest(res.players[0].score);
     }
-    setResult({ ...res, newBest });
+    setResult({ ...res, newBest, target: game.target });
+    preparePool(); // reshuffled songs for "Play again"
     setScreen('over');
   }
 
-  if (screen === 'game' && pool) {
-    return <Game key={gameId} pool={pool} onEnd={endGame} locked={!unlocked} onUnlock={unlock} />;
+  function toMenu() {
+    setError('');
+    setScreen('menu');
+  }
+
+  if (screen === 'game' && game) {
+    return <Game key={game.id} pool={game.pool} players={game.players} target={game.target} onEnd={endGame} />;
   }
   if (screen === 'over' && result) {
-    return <GameOver result={result} best={best} onAgain={start} />;
+    return (
+      <GameOver
+        result={result}
+        best={best}
+        starting={starting}
+        error={error}
+        onAgain={() => start(game.players)}
+        onMenu={toMenu}
+      />
+    );
+  }
+  if (screen === 'party') {
+    return (
+      <PartySetup
+        names={partyNames}
+        setNames={setPartyNames}
+        target={target}
+        setTarget={setTarget}
+        starting={starting}
+        error={error}
+        onStart={start}
+        onBack={toMenu}
+      />
+    );
   }
   return (
-    <main className="screen intro">
-      {screen === 'loading' && !unlocked && <TapOverlay ready={false} onTap={unlock} />}
-      <h1>Timeline Tunes</h1>
-      {screen === 'error' ? (
-        <>
-          <p className="status error" role="alert">
-            {error}
-          </p>
-          <button className="primary" onClick={startFromScratch}>
-            Try again
-          </button>
-        </>
-      ) : (
-        <p className="lead" role="status">
-          Loading songs…
-        </p>
-      )}
-    </main>
+    <Menu
+      best={best}
+      starting={starting}
+      error={error}
+      onSolo={() => start(['You'])}
+      onParty={() => {
+        setError('');
+        setScreen('party');
+      }}
+    />
   );
 }
