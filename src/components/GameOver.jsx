@@ -6,9 +6,9 @@ function partyHeadline({ players, winner, reason, target }) {
   const name = players[winner]?.name;
   switch (reason) {
     case 'target':
-      return [`${name} wins!`, `First to ${target} points.`];
+      return [`${name} gagne !`, `Premier à ${target} points.`];
     default:
-      return [`${name} wins!`, 'We ran out of songs. Most points takes it.'];
+      return [`${name} gagne !`, "Plus de chansons ! Le plus de points l'emporte."];
   }
 }
 
@@ -21,8 +21,8 @@ export default function GameOver({ result, best, starting, error, onAgain, onMen
   const [title, subtitle] = party
     ? partyHeadline(result)
     : [
-        result.reason === 'exhausted' ? 'Out of songs!' : 'Game over',
-        result.newBest ? 'New best score!' : `Best: ${best}`,
+        result.reason === 'exhausted' ? 'Plus de chansons !' : 'Partie terminée',
+        result.newBest ? 'Nouveau record !' : `Record : ${best}`,
       ];
 
   return (
@@ -34,8 +34,8 @@ export default function GameOver({ result, best, starting, error, onAgain, onMen
             {score} {score === 1 ? 'point' : 'points'}
           </p>
           <p className="hint">
-            {placed} {placed === 1 ? 'song' : 'songs'} placed · 🎤 {artist} {artist === 1 ? 'artist' : 'artists'}{' '}
-            guessed
+            {placed} {placed === 1 ? 'chanson placée' : 'chansons placées'} · 🎤 {artist}{' '}
+            {artist === 1 ? 'artiste trouvé' : 'artistes trouvés'}
           </p>
         </>
       )}
@@ -57,10 +57,10 @@ export default function GameOver({ result, best, starting, error, onAgain, onMen
 
       <div className="actions">
         <button className="primary" onClick={onAgain} disabled={starting}>
-          {starting ? 'Loading songs…' : party ? 'Rematch' : 'Play again'}
+          {starting ? 'Chargement des chansons…' : party ? 'Revanche' : 'Rejouer'}
         </button>
         <button className="ghost" onClick={onMenu} disabled={starting}>
-          Main menu
+          Menu principal
         </button>
       </div>
       {error && (
@@ -69,7 +69,7 @@ export default function GameOver({ result, best, starting, error, onAgain, onMen
         </p>
       )}
 
-      <h2>{party ? 'The timeline' : 'Your timeline'}</h2>
+      <h2>{party ? 'La frise' : 'Ta frise'}</h2>
       <Timeline songs={result.timeline} audio={audio} />
     </main>
   );

@@ -1,5 +1,6 @@
 import { getPlaylistTracks, getTrack } from '../api/deezer.js';
 import { findReleaseYear } from './releaseYear.js';
+import { findReplacement } from './replacement.js';
 import { displayTitle, normalize, normTitle } from './text.js';
 
 const BUFFER = 3; // songs resolved ahead of time
@@ -46,15 +47,19 @@ export class SongPool {
     const entries = results.flatMap((r) => (r.status === 'fulfilled' ? r.value : []));
     if (!entries.length && failed) throw failed.reason;
 
+    // Dead tracks (withdrawn by Deezer, no preview) are kept: a playable copy is looked up
+    // when they come up (see replacement.js). Playable entries go first in the dedup, so a
+    // song present both ways keeps its working version.
+    const isDead = (e) => e.readable === false || !e.preview;
     const seen = new Set();
-    this.queue = shuffle(entries).filter((e) => {
-      if (e.readable === false || !e.preview) return false;
+    const unique = [...entries.filter((e) => !isDead(e)), ...entries.filter(isDead)].filter((e) => {
       const key = `${normalize(e.artist)}|${normTitle(e.title)}`;
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
     });
-    if (this.queue.length < 2) throw new Error('Not enough playable songs in that selection.');
+    this.queue = shuffle(unique.map((e) => ({ ...e, dead: isDead(e) })));
+    if (this.queue.length < 2) throw new Error('Pas assez de chansons jouables.');
     this.fill();
   }
 
@@ -104,8 +109,14 @@ export class SongPool {
 async function resolveSong(entry) {
   // Fetch the full track: the playlist listing has no release date, and preview
   // URLs are signed and expire, so a fresh one is better anyway.
-  const track = await getTrack(entry.id);
-  if (!track.preview) return null;
+  let track = entry.dead ? null : await getTrack(entry.id);
+  if (!track || track.readable === false || !track.preview) {
+    // Withdrawn or unplayable here: look for the same song under another Deezer ID.
+    const copy = await findReplacement(entry.artist, entry.title);
+    if (!copy) return null;
+    track = await getTrack(copy.id);
+    if (!track.preview) return null;
+  }
   const found = await findReleaseYear(track, entry.decade);
   if (!found) return null;
   return {

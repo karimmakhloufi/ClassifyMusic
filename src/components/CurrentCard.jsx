@@ -1,13 +1,19 @@
 export default function CurrentCard({ song, reveal, loading, audio, blind = false }) {
   if (reveal) {
-    const { song: s, ok, by } = reveal;
+    const { song: s, ok, by, first } = reveal;
     return (
-      <div className={`current-card ${ok ? 'is-correct' : 'is-wrong'}`} role="status">
+      <div className={`current-card ${first ? 'is-first' : ok ? 'is-correct' : 'is-wrong'}`} role="status">
         <img className="cover" src={s.cover} alt="" />
         <div className="info">
           <div className="verdict">
-            {by ? `${by}: ` : ''}
-            {ok ? 'Correct!' : 'Not quite'}
+            {first ? (
+              'Première chanson sur la frise'
+            ) : (
+              <>
+                {by ? `${by} : ` : ''}
+                {ok ? 'Bien joué !' : 'Raté'}
+              </>
+            )}
           </div>
           <div className="title">{s.title}</div>
           <div className="artist">{s.artist}</div>
@@ -22,7 +28,7 @@ export default function CurrentCard({ song, reveal, loading, audio, blind = fals
       <div className="current-card placeholder" role="status">
         <div className="spinner" aria-hidden="true" />
         <div className="info">
-          <div className="artist">{loading ? 'Finding the next song and checking its release date…' : ''}</div>
+          <div className="artist">{loading ? 'Recherche de la prochaine chanson et vérification de sa date de sortie…' : ''}</div>
         </div>
       </div>
     );
@@ -41,13 +47,13 @@ export default function CurrentCard({ song, reveal, loading, audio, blind = fals
         <img className="cover" src={song.cover} alt="" />
       )}
       <div className="info">
-        <div className="title">{blind ? 'Mystery song' : song.title}</div>
-        <div className="artist">{blind ? 'Listen closely…' : song.artist}</div>
+        <div className="title">{blind ? 'Chanson mystère' : song.title}</div>
+        <div className="artist">{blind ? 'Écoute bien…' : song.artist}</div>
         <div className="player">
           <button
             className="play"
             onClick={() => audio.toggle(song.preview)}
-            aria-label={playing ? 'Pause preview' : 'Play preview'}
+            aria-label={playing ? "Mettre en pause l'extrait" : "Écouter l'extrait"}
           >
             {playing ? '❚❚' : '▶'}
           </button>

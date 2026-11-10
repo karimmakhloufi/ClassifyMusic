@@ -7,30 +7,30 @@ export default function PartySetup({ names, setNames, target, setTarget, startin
     setNames((cur) => cur.map((n, j) => (j === i ? value : n)));
   }
   function add() {
-    setNames((cur) => (cur.length < MAX_PLAYERS ? [...cur, `Player ${cur.length + 1}`] : cur));
+    setNames((cur) => (cur.length < MAX_PLAYERS ? [...cur, `Joueur ${cur.length + 1}`] : cur));
   }
   function remove(i) {
     setNames((cur) => (cur.length > MIN_PLAYERS ? cur.filter((_, j) => j !== i) : cur));
   }
   function submit(e) {
     e.preventDefault();
-    onStart(names.map((n, i) => n.trim() || `Player ${i + 1}`));
+    onStart(names.map((n, i) => n.trim() || `Joueur ${i + 1}`));
   }
 
   return (
     <main className="screen party-setup">
       <button className="ghost back" onClick={onBack} disabled={starting}>
-        ← Back
+        ← Retour
       </button>
-      <h1>Party mode</h1>
+      <h1>Mode soirée</h1>
       <p className="lead">
-        Pass the device around. Each song starts as a blind test: everyone guesses the artist, and whoever gets it
-        right scores a point. Then the player whose turn it is places the song on the shared timeline. A correct
-        placement scores a point too. First to the target score wins.
+        Faites tourner l'appareil. Chaque chanson commence par un blind test : tout le monde devine l'artiste, et
+        celui qui trouve marque un point. Ensuite, le joueur dont c'est le tour place la chanson sur la frise commune.
+        Un placement correct rapporte aussi un point. Le premier à atteindre le score cible gagne.
       </p>
 
       <form onSubmit={submit}>
-        <h2>Players or teams</h2>
+        <h2>Joueurs ou équipes</h2>
         <ol className="player-list">
           {names.map((name, i) => (
             <li key={i}>
@@ -39,14 +39,14 @@ export default function PartySetup({ names, setNames, target, setTarget, startin
                 value={name}
                 maxLength={20}
                 onChange={(e) => rename(i, e.target.value)}
-                aria-label={`Player ${i + 1} name`}
+                aria-label={`Nom du joueur ${i + 1}`}
               />
               <button
                 type="button"
                 className="ghost icon"
                 onClick={() => remove(i)}
                 disabled={names.length <= MIN_PLAYERS}
-                aria-label={`Remove ${name || `player ${i + 1}`}`}
+                aria-label={`Retirer ${name || `le joueur ${i + 1}`}`}
               >
                 ✕
               </button>
@@ -54,11 +54,11 @@ export default function PartySetup({ names, setNames, target, setTarget, startin
           ))}
         </ol>
         <button type="button" className="ghost" onClick={add} disabled={names.length >= MAX_PLAYERS}>
-          + Add player
+          + Ajouter un joueur
         </button>
 
-        <h2>First to</h2>
-        <div className="chips" role="radiogroup" aria-label="Points to win">
+        <h2>Premier à</h2>
+        <div className="chips" role="radiogroup" aria-label="Points pour gagner">
           {TARGETS.map((t) => (
             <button
               type="button"
@@ -74,7 +74,7 @@ export default function PartySetup({ names, setNames, target, setTarget, startin
         </div>
 
         <button type="submit" className="primary" disabled={starting}>
-          {starting ? 'Loading songs…' : 'Start party'}
+          {starting ? 'Chargement des chansons…' : 'Lancer la partie'}
         </button>
       </form>
 

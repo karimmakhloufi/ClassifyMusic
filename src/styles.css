@@ -123,6 +123,8 @@ h2 { font-size: 1.05rem; margin: 1.8em 0 0.7em; color: var(--muted); font-weight
 .verdict { font-weight: 700; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.06em; }
 .is-correct .verdict { color: var(--good); }
 .is-wrong .verdict { color: var(--bad); }
+.current-card.is-first { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--surface)); }
+.is-first .verdict { color: var(--accent); }
 .year-big { font-size: 2rem; font-weight: 800; margin-top: 2px; }
 
 .player { display: flex; align-items: center; gap: 10px; margin-top: 12px; }

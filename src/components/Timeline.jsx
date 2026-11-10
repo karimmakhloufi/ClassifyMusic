@@ -3,16 +3,16 @@ import { Fragment } from 'react';
 function slotLabel(songs, index) {
   const before = songs[index - 1];
   const after = songs[index];
-  if (!before) return `Before ${after.year}`;
-  if (!after) return `After ${before.year}`;
-  return `Between ${before.year} and ${after.year}`;
+  if (!before) return `Avant ${after.year}`;
+  if (!after) return `Après ${before.year}`;
+  return `Entre ${before.year} et ${after.year}`;
 }
 
 function Slot({ songs, index, onPlace }) {
   const label = slotLabel(songs, index);
   return (
     <li className="slot">
-      <button onClick={() => onPlace(index)} aria-label={`Place here: ${label}`} title={label}>
+      <button onClick={() => onPlace(index)} aria-label={`Placer ici : ${label}`} title={label}>
         <span className="plus">+</span>
         <span className="slot-label">{label}</span>
       </button>
@@ -39,7 +39,7 @@ export default function Timeline({ songs, onPlace, highlightId, audio }) {
                 className="tl-cover"
                 onClick={() => audio?.toggle(s.preview)}
                 disabled={!audio}
-                aria-label={`${playing ? 'Pause' : 'Play'} ${s.title}`}
+                aria-label={`${playing ? 'Pause' : 'Écouter'} ${s.title}`}
               >
                 <img src={s.cover} alt="" loading="lazy" />
                 {audio && <span className="tl-play">{playing ? '❚❚' : '▶'}</span>}
@@ -47,15 +47,15 @@ export default function Timeline({ songs, onPlace, highlightId, audio }) {
               <span className="tl-meta">
                 <span className="title">{s.title}</span>
                 <span className="artist">{s.artist}</span>
-                {s.placedBy && <span className="tl-by">placed by {s.placedBy}</span>}
+                {s.placedBy && <span className="tl-by">placée par {s.placedBy}</span>}
               </span>
               {s.placed === 'wrong' && (
-                <span className="tl-mark" aria-label="Misplaced">
+                <span className="tl-mark" aria-label="Mal placée">
                   ✗
                 </span>
               )}
               {s.placed === 'correct' && (
-                <span className="tl-mark" aria-label="Placed correctly">
+                <span className="tl-mark" aria-label="Bien placée">
                   ✓
                 </span>
               )}

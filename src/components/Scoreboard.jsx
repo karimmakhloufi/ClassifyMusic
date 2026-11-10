@@ -2,7 +2,7 @@ import { LIVES } from '../lib/players.js';
 
 function Hearts({ lives }) {
   return (
-    <span className="lives" aria-label={`${lives} ${lives === 1 ? 'life' : 'lives'} left`}>
+    <span className="lives" aria-label={`${lives} ${lives === 1 ? 'vie restante' : 'vies restantes'}`}>
       {Array.from({ length: LIVES }, (_, i) => (
         <span key={i} className={i < lives ? 'life' : 'life lost'} aria-hidden="true">
           ♥
@@ -36,7 +36,7 @@ export default function Scoreboard({ players, turn, target }) {
           </li>
         ))}
       </ul>
-      <span className="hint">First to {target}</span>
+      <span className="hint">Premier à {target}</span>
     </header>
   );
 }

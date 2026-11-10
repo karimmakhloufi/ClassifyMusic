@@ -4,17 +4,15 @@ import PartySetup from './components/PartySetup.jsx';
 import Game from './components/Game.jsx';
 import GameOver from './components/GameOver.jsx';
 import { SongPool } from './lib/songPool.js';
-import { DECADES } from './lib/sources.js';
+import { SOURCES } from './lib/sources.js';
 import { loadBest, saveBest } from './lib/storage.js';
-
-const SOURCES = DECADES.map(({ playlistId, decade }) => ({ playlistId, decade }));
 
 export default function App() {
   const [screen, setScreen] = useState('menu'); // menu | party | game | over
   const [game, setGame] = useState(null); // { id, pool, players: string[], target }
   const [result, setResult] = useState(null);
   const [best, setBest] = useState(loadBest);
-  const [partyNames, setPartyNames] = useState(['Player 1', 'Player 2']);
+  const [partyNames, setPartyNames] = useState(['Joueur 1', 'Joueur 2']);
   const [target, setTarget] = useState(10);
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState('');
@@ -40,7 +38,8 @@ export default function App() {
       await ready;
     } catch (err) {
       nextPool.current = null; // retry with a fresh pool next time
-      setError(err.message || 'Something went wrong loading the songs.');
+      console.warn('Loading songs failed', err);
+      setError('Impossible de charger les chansons. Vérifie ta connexion internet.');
       setStarting(false);
       return;
     }
@@ -102,7 +101,7 @@ export default function App() {
       best={best}
       starting={starting}
       error={error}
-      onSolo={() => start(['You'])}
+      onSolo={() => start(['Toi'])}
       onParty={() => {
         setError('');
         setScreen('party');

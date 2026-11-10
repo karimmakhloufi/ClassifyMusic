@@ -9,3 +9,13 @@ export const DECADES = [
   { key: '10s', label: '2010s', playlistId: '14917741483', decade: { from: 2010, to: 2019 } },
   { key: '20s', label: '2020s', playlistId: '13650084141', decade: { from: 2020, to: 2029 } },
 ];
+
+// Other playlists mixing several eras: no decade check, so their songs need a
+// MusicBrainz match to be used (see releaseYear.js).
+export const MIXED = [
+  // "Blind Test années 60 70 80 90 2000 2010 2020" (~2000 tracks, ~1300 with a preview)
+  { key: 'blindtest', label: 'Blind Test 60s–2020s', playlistId: '12958272963', decade: null },
+];
+
+/** Every playlist the game draws songs from. */
+export const SOURCES = [...DECADES, ...MIXED].map(({ playlistId, decade }) => ({ playlistId, decade }));

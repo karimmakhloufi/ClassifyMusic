@@ -3,7 +3,7 @@ export default function Menu({ best, starting, error, onSolo, onParty }) {
     <main className="screen menu">
       <h1>Timeline Tunes</h1>
       <p className="lead">
-        Listen to each song and slot it into the timeline at the right spot. Turn your sound on 🔊
+        Écoute chaque chanson et place-la au bon endroit sur la frise chronologique. Monte le son 🔊
       </p>
 
       <div className="mode-buttons">
@@ -12,8 +12,8 @@ export default function Menu({ best, starting, error, onSolo, onParty }) {
             ▶
           </span>
           <span className="mode-text">
-            <span className="mode-title">{starting ? 'Loading songs…' : 'Solo'}</span>
-            <span className="mode-sub">Guess the artist, then place the song. 3 lives.</span>
+            <span className="mode-title">{starting ? 'Chargement des chansons…' : 'Solo'}</span>
+            <span className="mode-sub">Devine l'artiste, puis place la chanson. 3 vies.</span>
           </span>
         </button>
         <button className="mode" onClick={onParty} disabled={starting}>
@@ -21,8 +21,8 @@ export default function Menu({ best, starting, error, onSolo, onParty }) {
             👥
           </span>
           <span className="mode-text">
-            <span className="mode-title">Party</span>
-            <span className="mode-sub">2–8 players on one device, one shared timeline</span>
+            <span className="mode-title">Soirée</span>
+            <span className="mode-sub">2 à 8 joueurs sur un seul appareil, une frise commune</span>
           </span>
         </button>
       </div>
@@ -32,7 +32,7 @@ export default function Menu({ best, starting, error, onSolo, onParty }) {
           {error}
         </p>
       )}
-      {best > 0 && <p className="hint center">Solo best: {best}</p>}
+      {best > 0 && <p className="hint center">Meilleur score solo : {best}</p>}
     </main>
   );
 }

@@ -17,6 +17,10 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
  * Turn phases:
  *   solo:  blind (guess the artist) -> award (did you get it?) -> place
  *   party: handoff ("Pass to X") -> blind (guess the artist) -> award (who got it?) -> place
+ *
+ * The very first song has the same blind test, then goes onto the (empty) timeline
+ * automatically: there's nothing to place it relative to. In party mode it's a round
+ * for everyone, so it doesn't use up player 1's turn.
  */
 export default function Game({ pool, players: names, target, onEnd }) {
   const party = names.length > 1;
@@ -44,25 +48,24 @@ export default function Game({ pool, players: names, target, onEnd }) {
   const finish = (end, finalPlayers, finalTimeline) =>
     onEnd({ mode: party ? 'party' : 'solo', players: finalPlayers, timeline: finalTimeline, ...end });
 
-  // Deal the first (already revealed) song plus the first song to place.
+  // Deal the first song: blind test first, then it starts the timeline on its own.
   useEffect(() => {
     if (started.current) return; // StrictMode runs effects twice in dev
     started.current = true;
     (async () => {
-      const anchor = await pool.next();
       const first = await pool.next();
       if (!alive.current) return;
-      const anchorTimeline = anchor ? [{ ...anchor, placed: 'anchor' }] : [];
-      if (!anchor || !first) {
-        finish({ reason: 'exhausted', winner: party ? 0 : null }, players, anchorTimeline);
+      if (!first) {
+        finish({ reason: 'exhausted', winner: party ? 0 : null }, players, []);
         return;
       }
-      setTimeline(anchorTimeline);
       setCurrent(first);
       setLoading(false);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const isFirstSong = timeline.length === 0;
 
   // Auto-play each new song once it's visible (in party mode: after the handoff tap).
   const waitingForTap = phase === 'handoff';
@@ -78,9 +81,48 @@ export default function Game({ pool, players: names, target, onEnd }) {
   }
 
   function award(index) {
-    setPlayers((ps) => awardArtist(ps, index));
+    const nextPlayers = awardArtist(players, index);
+    setPlayers(nextPlayers);
     setAwarded(index);
     setPhase('place');
+    if (isFirstSong) placeFirst(nextPlayers);
+  }
+
+  /** The first song goes straight onto the empty timeline; the turn doesn't move on. */
+  async function placeFirst(nextPlayers) {
+    const song = current;
+    const nextTimeline = [{ ...song, placed: 'anchor' }];
+    audio.stop();
+    setTimeline(nextTimeline);
+    setReveal({ song, ok: null, first: true });
+    setCurrent(null);
+    await sleep(REVEAL_MS);
+    if (!alive.current) return;
+    await advance(nextPlayers, nextTimeline, turn);
+  }
+
+  /** After a reveal: end the game or deal the next song to player `next`. */
+  async function advance(nextPlayers, nextTimeline, next) {
+    const end = checkEnd(nextPlayers, target);
+    if (end) {
+      finish(end, nextPlayers, nextTimeline);
+      return;
+    }
+
+    setTurn(next);
+    setLoading(true);
+    const upcoming = await pool.next();
+    if (!alive.current) return;
+    setLoading(false);
+    setReveal(null);
+    setAwarded(undefined);
+    if (!upcoming) {
+      finish({ reason: 'exhausted', winner: party ? leader(nextPlayers) : null }, nextPlayers, nextTimeline);
+      return;
+    }
+    // Batched together, so the auto-play effect sees the handoff and waits for the tap.
+    setPhase(firstPhase);
+    setCurrent(upcoming);
   }
 
   async function place(slot) {
@@ -103,37 +145,20 @@ export default function Game({ pool, players: names, target, onEnd }) {
 
     await sleep(REVEAL_MS);
     if (!alive.current) return;
-    const end = checkEnd(nextPlayers, target);
-    if (end) {
-      finish(end, nextPlayers, nextTimeline);
-      return;
-    }
-
-    setTurn(nextTurn(nextPlayers, turn));
-    setLoading(true);
-    const upcoming = await pool.next();
-    if (!alive.current) return;
-    setLoading(false);
-    setReveal(null);
-    setAwarded(undefined);
-    if (!upcoming) {
-      finish({ reason: 'exhausted', winner: party ? leader(nextPlayers) : null }, nextPlayers, nextTimeline);
-      return;
-    }
-    // Batched together, so the auto-play effect sees the handoff and waits for the tap.
-    setPhase(firstPhase);
-    setCurrent(upcoming);
+    await advance(nextPlayers, nextTimeline, nextTurn(nextPlayers, turn));
   }
 
   const who = players[turn];
-  const canPlace = current && !reveal && phase === 'place';
+  const canPlace = current && !reveal && phase === 'place' && !isFirstSong;
 
   let hint = ' ';
-  if (current && phase === 'place') {
+  if (current && isFirstSong) {
+    hint = 'Cette première chanson lance la frise : pas besoin de la placer.';
+  } else if (current && phase === 'place') {
     hint = (
       <>
         {party && <strong>{who.name}: </strong>}
-        Tap a <strong>+</strong> to place the song. Oldest at the top.
+        Touche un <strong>+</strong> pour placer la chanson. La plus ancienne en haut.
       </>
     );
   } else if (current && (phase === 'blind' || phase === 'award')) {
@@ -141,10 +166,10 @@ export default function Game({ pool, players: names, target, onEnd }) {
       <>
         {party ? (
           <>
-            Then <strong>{who.name}</strong> places the song on the timeline.
+            Ensuite, <strong>{who.name}</strong> place la chanson sur la frise.
           </>
         ) : (
-          'Then place the song on the timeline.'
+          'Ensuite, place la chanson sur la frise.'
         )}
       </>
     );
@@ -154,8 +179,14 @@ export default function Game({ pool, players: names, target, onEnd }) {
     <main className="screen game">
       {phase === 'handoff' && !reveal && (
         <TapOverlay
-          title={`${who.name}'s turn`}
-          sub={current ? 'Pass the device, then tap to play the song' : 'Loading the next song…'}
+          title={isFirstSong ? 'Première chanson' : `Au tour de ${who.name}`}
+          sub={
+            !current
+              ? 'Chargement de la prochaine chanson…'
+              : isFirstSong
+                ? "Tout le monde devine l'artiste. Touche pour lancer !"
+                : "Passe l'appareil, puis touche pour lancer la chanson"
+          }
           onTap={startTurn}
         />
       )}
@@ -181,11 +212,9 @@ export default function Game({ pool, players: names, target, onEnd }) {
         )}
       </div>
 
+      <p className="hint center">{hint}</p>
       {timeline.length > 0 && (
-        <>
-          <p className="hint center">{hint}</p>
-          <Timeline songs={timeline} onPlace={canPlace ? place : null} highlightId={reveal?.song.id} audio={audio} />
-        </>
+        <Timeline songs={timeline} onPlace={canPlace ? place : null} highlightId={reveal?.song.id} audio={audio} />
       )}
     </main>
   );

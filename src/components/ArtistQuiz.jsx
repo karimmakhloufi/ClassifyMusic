@@ -11,9 +11,9 @@ export default function ArtistQuiz({ phase, players, awarded, onReveal, onAward 
   if (phase === 'blind') {
     return (
       <div className="quiz">
-        <p className="quiz-prompt">{solo ? "🎤 Who's the artist? Say it out loud!" : "🎤 Everyone: who's the artist?"}</p>
+        <p className="quiz-prompt">{solo ? "🎤 Qui est l'artiste ? Dis-le à voix haute !" : "🎤 Tout le monde : qui est l'artiste ?"}</p>
         <button className="primary quiz-reveal" onClick={onReveal}>
-          Reveal
+          Révéler
         </button>
       </div>
     );
@@ -22,11 +22,11 @@ export default function ArtistQuiz({ phase, players, awarded, onReveal, onAward 
   if (phase === 'award') {
     return (
       <div className="quiz">
-        <p className="quiz-prompt">{solo ? 'Did you get the artist?' : 'Who guessed the artist?'}</p>
+        <p className="quiz-prompt">{solo ? "Tu as trouvé l'artiste ?" : "Qui a trouvé l'artiste ?"}</p>
         <div className="chips quiz-choices">
           {solo ? (
             <button className="chip award" onClick={() => onAward(0)}>
-              Yes, +1 point
+              Oui, +1 point
             </button>
           ) : (
             players.map((p, i) => (
@@ -36,7 +36,7 @@ export default function ArtistQuiz({ phase, players, awarded, onReveal, onAward 
             ))
           )}
           <button className="chip none" onClick={() => onAward(null)}>
-            {solo ? 'No' : 'No one'}
+            {solo ? 'Non' : 'Personne'}
           </button>
         </div>
       </div>
@@ -45,8 +45,8 @@ export default function ArtistQuiz({ phase, players, awarded, onReveal, onAward 
 
   if (phase === 'place' && awarded !== undefined) {
     let text;
-    if (solo) text = awarded == null ? 'No artist point this time.' : '🎤 +1 point for the artist!';
-    else text = awarded == null ? 'Nobody got the artist.' : `🎤 +1 point for ${players[awarded].name}`;
+    if (solo) text = awarded == null ? "Pas de point d'artiste cette fois." : "🎤 +1 point pour l'artiste !";
+    else text = awarded == null ? "Personne n'a trouvé l'artiste." : `🎤 +1 point pour ${players[awarded].name}`;
     return <p className={`quiz-result ${awarded == null ? 'miss' : ''}`}>{text}</p>;
   }
   return null;

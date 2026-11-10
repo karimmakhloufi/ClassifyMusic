@@ -45,13 +45,15 @@ export async function findReleaseYear(track, decade) {
       cache[track.id] = mbYear;
       saveCache();
     } catch (err) {
-      // Decade playlists have plenty of songs: skip rather than trust a reissue date.
-      // Custom playlists may be small, so fall back to Deezer's date there.
+      // Plenty of songs to choose from: skip rather than trust a possible reissue date.
       console.warn('MusicBrainz lookup failed', err);
-      if (decade) return null;
-      mbYear = null;
+      return null;
     }
   }
+
+  // Mixed-era playlists have no decade to sanity-check Deezer's date against,
+  // so they need a MusicBrainz match.
+  if (!decade && mbYear == null) return null;
 
   const candidates = [parseYear(track.release_date), parseYear(track.album?.release_date), mbYear].filter(Boolean);
   if (!candidates.length) return null;
