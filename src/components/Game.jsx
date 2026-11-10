@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useAudio } from '../hooks/useAudio.js';
 import { correctSlot, insertAt, isCorrectSlot } from '../lib/timeline.js';
 import { applyPlacement, awardArtist, checkEnd, createPlayers, leader, nextTurn } from '../lib/players.js';
+import { artistMatches } from '../lib/artistMatch.js';
 import ArtistQuiz from './ArtistQuiz.jsx';
 import CurrentCard from './CurrentCard.jsx';
 import Scoreboard from './Scoreboard.jsx';
@@ -32,6 +33,7 @@ export default function Game({ pool, players: names, target, onEnd }) {
   const [current, setCurrent] = useState(null);
   const [phase, setPhase] = useState(firstPhase);
   const [awarded, setAwarded] = useState(undefined); // undefined = not decided, null = no one, else index
+  const [guess, setGuess] = useState(null); // solo: { text, ok } typed answer for the artist
   const [reveal, setReveal] = useState(null); // { song, ok, by } after placing
   const [loading, setLoading] = useState(true);
 
@@ -80,6 +82,13 @@ export default function Game({ pool, players: names, target, onEnd }) {
     setPhase('blind');
   }
 
+  /** Solo: the player typed an artist name ('' = skipped). Checked with typo tolerance. */
+  function guessArtist(text) {
+    const ok = artistMatches(text, current.artist);
+    setGuess({ text: text.trim(), ok });
+    award(ok ? 0 : null);
+  }
+
   function award(index) {
     const nextPlayers = awardArtist(players, index);
     setPlayers(nextPlayers);
@@ -116,6 +125,7 @@ export default function Game({ pool, players: names, target, onEnd }) {
     setLoading(false);
     setReveal(null);
     setAwarded(undefined);
+    setGuess(null);
     if (!upcoming) {
       finish({ reason: 'exhausted', winner: party ? leader(nextPlayers) : null }, nextPlayers, nextTimeline);
       return;
@@ -201,13 +211,17 @@ export default function Game({ pool, players: names, target, onEnd }) {
           audio={audio}
           blind={phase === 'blind'}
         />
-        {current && !reveal && (
+        {/* Also shown during the first song's reveal, so the artist result stays visible. */}
+        {((current && !reveal) || (reveal?.first && awarded !== undefined)) && (
           <ArtistQuiz
             phase={phase}
             players={players}
             awarded={awarded}
+            artist={current?.artist ?? reveal?.song.artist}
+            guess={guess}
             onReveal={() => setPhase('award')}
             onAward={award}
+            onGuess={guessArtist}
           />
         )}
       </div>
