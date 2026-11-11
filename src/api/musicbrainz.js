@@ -37,10 +37,11 @@ async function searchRecordings(query) {
 }
 
 const lucenePhrase = (s) => `"${s.replace(/["\\]/g, '\\$&')}"`;
-const NOT_ORIGINAL = /live|demo|remix|instrumental|acoustic|karaoke|cover/i;
-
+// Live, demo, remix… recordings are deliberately NOT excluded. We keep the EARLIEST date,
+// and such versions almost always come out after the original, so they can't skew it.
+// Excluding them broke songs whose original IS a live recording: Jacques Brel's
+// "Amsterdam" only exists live (Olympia, 1964) and came out as 2019.
 function matches(rec, wantTitle, wantArtist) {
-  if (rec.video || NOT_ORIGINAL.test(rec.disambiguation ?? '')) return false;
   if (normTitle(rec.title) !== wantTitle) return false;
   const credits = rec['artist-credit'] ?? [];
   const joined = normalize(credits.map((c) => c.name + (c.joinphrase ?? '')).join(''));

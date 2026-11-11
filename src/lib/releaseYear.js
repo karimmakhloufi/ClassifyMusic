@@ -1,6 +1,8 @@
 import { firstReleaseYear } from '../api/musicbrainz.js';
 
-const CACHE_KEY = 'tt:years:v1';
+// Bump the version whenever the date logic changes, so players' browsers drop
+// years computed by the old logic (v1 had live recordings excluded).
+const CACHE_KEY = 'tt:years:v2';
 
 function loadCache() {
   try {
