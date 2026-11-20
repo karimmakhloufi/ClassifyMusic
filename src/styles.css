@@ -10,6 +10,8 @@
   --good: #3ccf8e;
   --bad: #ff5c6c;
   --radius: 14px;
+  /* Viewport-fixed, so anything that repeats it lines up seamlessly with the page. */
+  --page-bg: radial-gradient(circle at 50% -20%, #2c2147 0%, var(--bg) 60%) fixed;
   color-scheme: dark;
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 }
@@ -19,7 +21,7 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background: radial-gradient(circle at 50% -20%, #2c2147 0%, var(--bg) 60%) fixed;
+  background: var(--page-bg);
   color: var(--text);
   line-height: 1.4;
 }
@@ -94,7 +96,10 @@ h2 { font-size: 1.05rem; margin: 1.8em 0 0.7em; color: var(--muted); font-weight
   top: 0;
   z-index: 2;
   padding: 8px 0;
-  background: linear-gradient(var(--bg) 85%, transparent);
+  /* Same background as the page (no visible band), fading out at the bottom so the
+     timeline slides under it smoothly. */
+  background: var(--page-bg);
+  mask-image: linear-gradient(#000 calc(100% - 8px), transparent);
 }
 .current-card {
   display: flex;
