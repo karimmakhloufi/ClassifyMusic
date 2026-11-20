@@ -1,0 +1,14 @@
+{
+  "artists": {
+    "Ed Sheeran": { "add": ["pop"] },
+    "Yusuf / Cat Stevens": { "set": ["folk"] },
+    "Florence + The Machine": { "set": ["pop", "rock"] },
+    "C+C Music Factory": { "set": ["electro"] },
+    "Axwell /\\ Ingrosso": { "set": ["electro"] },
+    "Herbert Léonard": { "set": ["chanson", "fr"] },
+    "Pow Wow": { "set": ["chanson", "fr"] },
+    "Princess Erika": { "set": ["world", "fr"] },
+    "2 Be 3": { "set": ["pop", "fr"] }
+  },
+  "songs": {}
+}

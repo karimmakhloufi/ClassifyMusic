@@ -279,7 +279,18 @@ h2 { font-size: 1.05rem; margin: 1.8em 0 0.7em; color: var(--muted); font-weight
   background: var(--surface);
   color: var(--muted);
 }
-.chip.on { background: var(--accent); border-color: var(--accent); color: white; font-weight: 600; }
+.chip.on, .chip[aria-pressed='true'] { background: var(--accent); border-color: var(--accent); color: white; font-weight: 600; }
+
+/* Category picker (menu) */
+.categories { display: flex; flex-direction: column; gap: 12px; margin-top: 24px; }
+.categories .chips { justify-content: center; }
+.categories .chip { padding: 6px 14px; font-size: 0.9rem; }
+.segmented { display: flex; border: 1px solid var(--border); border-radius: 999px; overflow: hidden; align-self: center; }
+.segmented button { padding: 6px 14px; border: 0; background: var(--surface); color: var(--muted); font-size: 0.9rem; }
+.segmented button + button { border-left: 1px solid var(--border); }
+.segmented button[aria-checked='true'] { background: var(--accent); color: white; font-weight: 600; }
+.pool-info { margin: 0; min-height: 1.4em; }
+.categories + .mode-buttons { margin-top: 12px; }
 
 /* Party scoreboard */
 .hud.party { flex-direction: column; align-items: stretch; gap: 6px; }

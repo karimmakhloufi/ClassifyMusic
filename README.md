@@ -47,6 +47,23 @@ Then open the URL Vite prints (usually http://localhost:5173).
 - MusicBrainz allows about 1 request/second, so songs are resolved a few at a time in the
   background while you play (`src/lib/songPool.js`).
 - Years are compared, not full dates. Songs from the same year can go in either order.
+- **Categories**: the menu lets players pick styles (several at once; none = all) and an
+  origin (francophone / international). Artists are classified **offline** from their
+  Last.fm tags (Last.fm track tags are almost always empty, artist tags are not), so
+  filtering costs nothing at runtime. A song gets every style whose tags score at least
+  40% of the artist's dominant style, plus "francophone" if a French tag scores ≥ 20.
+
+  To refresh after changing playlists (or the tag mapping in the script):
+
+  ```sh
+  echo LASTFM_API_KEY=your_key > .env.local   # free key: https://www.last.fm/api/account/create
+  npm run categories                           # add --refresh to re-query every artist
+  ```
+
+  Raw tags are cached in `scripts/lastfm-artist-tags.json`, so only new artists are queried
+  and mapping tweaks need no network. Manual fixes go in `src/data/categoryOverrides.json`:
+  `"artists": { "Name": { "add"|"remove"|"set": [...] } }`, or per song with
+  `"songs": { "Artist|Title": {...} }`. The script lists artists left without a style.
 
 ## Project layout
 
@@ -59,6 +76,11 @@ src/
   lib/timeline.js       Pure placement rules
   lib/players.js        Turns, lives and win conditions (solo + party)
   lib/sources.js        Decade → Deezer playlist IDs
+  lib/categories.js     Category definitions and selection matching
+  lib/songCategories.js Song → categories lookup (from data/categories.json)
+  data/                 Generated categories + manual overrides
+scripts/
+  build-categories.mjs  Last.fm tags → src/data/categories.json
   hooks/useAudio.js     Single shared <audio> element for previews
   components/           Menu, PartySetup, Game, Scoreboard, CurrentCard, Timeline, GameOver
 ```

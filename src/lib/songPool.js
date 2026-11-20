@@ -2,8 +2,11 @@ import { getPlaylistTracks, getTrack } from '../api/deezer.js';
 import { findReleaseYear } from './releaseYear.js';
 import { findReplacement } from './replacement.js';
 import { displayTitle, normalize, normTitle } from './text.js';
+import { DEFAULT_SELECTION, isDefaultSelection, matchesSelection } from './categories.js';
+import { songCategories } from './songCategories.js';
 
 const BUFFER = 3; // songs resolved ahead of time
+const MIN_SONGS = 20; // below this, a category selection makes for a too-short game
 
 function shuffle(arr) {
   const a = [...arr];
@@ -14,15 +17,28 @@ function shuffle(arr) {
   return a;
 }
 
+/** Thrown by init() when the category selection leaves too few songs. */
+export class PoolTooSmallError extends Error {
+  constructor(count) {
+    super(`Pas assez de chansons dans cette sélection (${count}).`);
+    this.count = count;
+  }
+}
+
 /**
  * Supplies playable songs with a verified release year.
  * Resolving a year takes ~1 s (MusicBrainz rate limit), so a few songs are
  * prepared in the background while the player is thinking.
  */
 export class SongPool {
-  /** @param sources [{playlistId, decade: {from,to} | null}] */
-  constructor(sources) {
+  /**
+   * @param sources   [{playlistId, decade: {from,to} | null}]
+   * @param selection categories to keep (see categories.js), all songs by default
+   */
+  constructor(sources, selection = DEFAULT_SELECTION) {
     this.sources = sources;
+    this.selection = selection;
+    this.total = 0; // songs matching the selection, known after init()
     this.queue = [];
     this.ready = [];
     this.waiters = [];
@@ -44,8 +60,11 @@ export class SongPool {
       ),
     );
     const failed = results.find((r) => r.status === 'rejected');
-    const entries = results.flatMap((r) => (r.status === 'fulfilled' ? r.value : []));
+    let entries = results.flatMap((r) => (r.status === 'fulfilled' ? r.value : []));
     if (!entries.length && failed) throw failed.reason;
+    if (!isDefaultSelection(this.selection)) {
+      entries = entries.filter((e) => matchesSelection(songCategories(e.artist, e.title), this.selection));
+    }
 
     // Dead tracks (withdrawn by Deezer, no preview) are kept: a playable copy is looked up
     // when they come up (see replacement.js). Playable entries go first in the dedup, so a
@@ -59,7 +78,10 @@ export class SongPool {
       return true;
     });
     this.queue = shuffle(unique.map((e) => ({ ...e, dead: isDead(e) })));
-    if (this.queue.length < 2) throw new Error('Pas assez de chansons jouables.');
+    this.total = this.queue.length;
+    if (this.queue.length < (isDefaultSelection(this.selection) ? 2 : MIN_SONGS)) {
+      throw new PoolTooSmallError(this.queue.length);
+    }
     this.fill();
   }
 

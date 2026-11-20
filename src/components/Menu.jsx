@@ -1,4 +1,8 @@
-export default function Menu({ best, starting, error, onSolo, onParty }) {
+import CategoryPicker from './CategoryPicker.jsx';
+import { isDefaultSelection } from '../lib/categories.js';
+
+export default function Menu({ best, selection, onSelectionChange, poolInfo, starting, error, onSolo, onParty }) {
+  const blocked = starting || poolInfo?.tooSmall;
   return (
     <main className="screen menu">
       <h1>Timeline Tunes</h1>
@@ -6,8 +10,10 @@ export default function Menu({ best, starting, error, onSolo, onParty }) {
         Écoute chaque chanson et place-la au bon endroit sur la frise chronologique. Monte le son 🔊
       </p>
 
+      <CategoryPicker selection={selection} onChange={onSelectionChange} poolInfo={poolInfo} disabled={starting} />
+
       <div className="mode-buttons">
-        <button className="mode primary-mode" onClick={onSolo} disabled={starting}>
+        <button className="mode primary-mode" onClick={onSolo} disabled={blocked}>
           <span className="mode-icon" aria-hidden="true">
             ▶
           </span>
@@ -16,7 +22,7 @@ export default function Menu({ best, starting, error, onSolo, onParty }) {
             <span className="mode-sub">Devine l'artiste, puis place la chanson. 3 vies.</span>
           </span>
         </button>
-        <button className="mode" onClick={onParty} disabled={starting}>
+        <button className="mode" onClick={onParty} disabled={blocked}>
           <span className="mode-icon" aria-hidden="true">
             👥
           </span>
@@ -32,7 +38,11 @@ export default function Menu({ best, starting, error, onSolo, onParty }) {
           {error}
         </p>
       )}
-      {best > 0 && <p className="hint center">Meilleur score solo : {best}</p>}
+      {best > 0 && (
+        <p className="hint center">
+          Meilleur score solo{isDefaultSelection(selection) ? '' : ' (cette sélection)'} : {best}
+        </p>
+      )}
     </main>
   );
 }
